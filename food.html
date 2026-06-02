@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>食甚 · 今天吃什么</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #fef7e0;
+            font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            padding: 20px 16px 40px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .app-wrapper {
+            max-width: 520px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        /* 头部：只有餐盘emoji + 食甚 + 小字 */
+        .hero {
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .cute-emoji {
+            font-size: 58px;
+            display: inline-block;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.06));
+        }
+        .title-main {
+            font-family: "Hei SC", "PingFang SC", system-ui, sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            margin: 8px 0 6px 0;
+            background: linear-gradient(135deg, #c27e3a, #a25f2c);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .sub-saying {
+            font-size: 13px;
+            color: #8b6b42;
+            font-weight: 450;
+            opacity: 0.85;
+        }
+
+        /* 白色大卡片 */
+        .white-card {
+            background: rgba(255, 252, 240, 0.98);
+            border-radius: 48px;
+            box-shadow: 0 20px 40px rgba(100, 60, 10, 0.12), 0 2px 6px rgba(0,0,0,0.02);
+            padding: 28px 20px 32px;
+            transition: all 0.3s ease;
+            border: 1px solid #ffefcf;
+        }
+
+        /* 抽卡转动区 */
+        .card-slot {
+            background: #fffcf3;
+            border: 2px dashed #eccc9e;
+            border-radius: 40px;
+            padding: 28px 12px 28px;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin-bottom: 20px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .card-slot.active-draw {
+            border: 3px solid #ffb347;
+            background: #fff7ea;
+            box-shadow: 0 0 0 3px rgba(255, 180, 71, 0.3);
+            animation: gentlePulse 0.5s ease 2;
+        }
+        @keyframes gentlePulse {
+            0% { transform: scale(1); border-color: #ffb347; }
+            50% { transform: scale(1.01); border-color: #ff9f2e; }
+            100% { transform: scale(1); border-color: #ffb347; }
+        }
+
+        .slot-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+        .dice-icon {
+            font-size: 54px;
+            opacity: 0.7;
+        }
+        .slot-hint {
+            font-size: 15px;
+            color: #bc8f5a;
+            font-weight: 500;
+        }
+
+        /* 滚动抽卡展示区 */
+        .rolling-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+        .rolling-emoji {
+            font-size: 64px;
+        }
+        .rolling-name {
+            font-size: 28px;
+            font-weight: 800;
+            color: #b64926;
+            background: #fff0dd;
+            padding: 8px 22px;
+            border-radius: 60px;
+            display: inline-block;
+            letter-spacing: 2px;
+        }
+        .rolling-status {
+            font-size: 14px;
+            color: #c28b4b;
+            margin-top: 8px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        /* 鲜艳的“吃什么”按钮 */
+        .eat-btn {
+            background: linear-gradient(105deg, #ff9f4a, #ff7e2e);
+            border: none;
+            border-radius: 60px;
+            padding: 16px 20px;
+            width: 100%;
+            font-size: 24px;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 16px rgba(220, 100, 20, 0.25);
+            cursor: pointer;
+            transition: 0.1s linear;
+            margin-bottom: 16px;
+            letter-spacing: 6px;
+        }
+        .eat-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* 两个操作按钮 */
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            margin: 20px 0 8px;
+            justify-content: center;
+        }
+        .btn-eat {
+            flex: 1;
+            background: #d97a2b;
+            border: none;
+            border-radius: 50px;
+            padding: 14px 0;
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+            box-shadow: 0 3px 0 #884a18;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-change {
+            flex: 1;
+            background: white;
+            border: 2px solid #ffa559;
+            border-radius: 50px;
+            padding: 12px 0;
+            font-weight: 700;
+            font-size: 18px;
+            color: #c56a1e;
+            cursor: pointer;
+        }
+        .btn-eat:active, .btn-change:active {
+            transform: scale(0.96);
+        }
+
+        /* 透明管理选项 */
+        .manage-trigger {
+            border: 1.5px solid #e9cfa6;
+            background: transparent;
+            border-radius: 60px;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 17px;
+            font-weight: 600;
+            color: #b27d48;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+        .manage-trigger:active {
+            background: #fff3e2;
+        }
+        .manage-panel {
+            background: #fffef7;
+            border-radius: 48px;
+            margin-top: 12px;
+            padding: 20px 16px;
+            border: 1px solid #ffefcf;
+            transition: all 0.25s;
+        }
+        .manage-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #aa7844;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dish-item {
+            background: #fff9ef;
+            border-radius: 60px;
+            padding: 10px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .dish-name {
+            font-weight: 600;
+            font-size: 16px;
+            color: #7b4a2a;
+            min-width: 100px;
+        }
+        .dish-frequency {
+            background: #f1e7d8;
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #9b5a2c;
+        }
+        .del-dish {
+            background: #ffe1ca;
+            border: none;
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #b4552a;
+            cursor: pointer;
+        }
+        .add-dish-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .add-input {
+            flex: 2;
+            border: 1px solid #ffd8af;
+            border-radius: 50px;
+            padding: 12px 16px;
+            background: white;
+            font-size: 14px;
+        }
+        .add-btn {
+            background: #ffcf94;
+            border: none;
+            border-radius: 50px;
+            padding: 0 20px;
+            font-weight: 600;
+            color: #5e3a1a;
+            cursor: pointer;
+        }
+        .reset-all-btn {
+            background: #ffedd5;
+            margin-top: 16px;
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            border-radius: 50px;
+            border: 1px solid #ffd39f;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .bottom-note {
+            text-align: center;
+            font-size: 12px;
+            color: #c69a6b;
+            margin: 12px 0 0;
+        }
+        .hide {
+            display: none;
+        }
+        button {
+            cursor: pointer;
+        }
+        @media (max-width: 480px) {
+            .white-card { padding: 20px 16px 28px; }
+            .rolling-name { font-size: 22px; }
+            .rolling-emoji { font-size: 52px; }
+            .eat-btn { font-size: 22px; padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <div class="hero">
+        <div class="cute-emoji">🍽️</div>
+        <div class="title-main">食甚</div>
+        <div class="sub-saying">没有什么是一顿饭解决不了的，如果有，就再转一圈</div>
+    </div>
+
+    <div class="white-card">
+        <div class="card-slot" id="cardSlot">
+            <div id="slotPlaceholder" class="slot-placeholder">
+                <div class="dice-icon">🎲</div>
+                <div class="slot-hint">点击下方按钮开始抽取</div>
+            </div>
+            <div id="rollingArea" style="width:100%"></div>
+        </div>
+
+        <button class="eat-btn" id="eatBtn">🍴 吃什么 🍴</button>
+
+        <div id="actionGroup" class="action-buttons hide">
+            <button class="btn-eat" id="confirmEatBtn">就吃这个 ✅</button>
+            <button class="btn-change" id="rerollBtn">换一个 🔄</button>
+        </div>
+
+        <div class="manage-trigger" id="manageTrigger">
+            📋 管理选项
+        </div>
+        <div id="managePanel" class="manage-panel hide">
+            <div class="manage-title">🍽️ 我的美食清单 & 出现频率</div>
+            <div id="dishListContainer"></div>
+            <div class="add-dish-area">
+                <input type="text" id="newDishInput" class="add-input" placeholder="新菜品，例如：酸菜鱼" autocomplete="off">
+                <button id="addNewDishBtn" class="add-btn">➕ 添加</button>
+            </div>
+            <button id="globalResetBtn" class="reset-all-btn">🔄 重置所有菜品频率为10</button>
+        </div>
+        <div class="bottom-note">💡 抽到不想要的？点[换一个]即可降低出现概率；[就吃这个]会增加它的概率</div>
+    </div>
+</div>
+
+<script>
+    // ------------------- 数据结构 -------------------
+    // 每个菜品: { name, frequency(权重/频率值), emoji }
+    let dishes = [];
+    let isDrawing = false;          // 抽卡滚动中
+    let rollInterval = null;
+    let rollSteps = [];             // 存储滚动每一步的时间间隔
+    let currentRollIndex = 0;
+    let rollTimeoutId = null;
+    let currentFinalDish = null;    // 最终定格菜品
+
+    // DOM 元素
+    const cardSlot = document.getElementById('cardSlot');
+    const slotPlaceholder = document.getElementById('slotPlaceholder');
+    const rollingArea = document.getElementById('rollingArea');
+    const eatBtn = document.getElementById('eatBtn');
+    const actionGroup = document.getElementById('actionGroup');
+    const confirmEatBtn = document.getElementById('confirmEatBtn');
+    const rerollBtn = document.getElementById('rerollBtn');
+    const manageTrigger = document.getElementById('manageTrigger');
+    const managePanel = document.getElementById('managePanel');
+    const dishListContainer = document.getElementById('dishListContainer');
+    const newDishInput = document.getElementById('newDishInput');
+    const addNewDishBtn = document.getElementById('addNewDishBtn');
+    const globalResetBtn = document.getElementById('globalResetBtn');
+
+    // 辅助: 根据菜名获取简单emoji
+    function getEmojiForName(name) {
+        const map = {
+            '面': '🍜', '饭': '🍚', '水饺': '🥟', '饺子': '🥟', '寿司': '🍣', '卷饼': '🌮', '沙拉': '🥗',
+            '鸡': '🍗', '牛': '🥩', '鱼': '🐟', '虾': '🦐', '蟹': '🦀', '汤': '🥣', '火锅': '🍲',
+            '麻辣烫': '🍲', '粉': '🍝', '包': '🥟', '披萨': '🍕', '汉堡': '🍔', '烤串': '🍢', '蛋': '🥚', '豆腐': '🥟'
+        };
+        for (let [key, val] of Object.entries(map)) {
+            if (name.includes(key)) return val;
+        }
+        return '🍽️';
+    }
+
+    // 初始化默认菜品 (频率均为10)
+    function getDefaultDishes() {
+        return [
+            { name: '豚骨拉面', frequency: 10, emoji: '🍜' },
+            { name: '咖喱鸡肉饭', frequency: 10, emoji: '🍛' },
+            { name: '手工水饺', frequency: 10, emoji: '🥟' },
+            { name: '墨西哥塔可', frequency: 10, emoji: '🌮' },
+            { name: '能量沙拉碗', frequency: 10, emoji: '🥗' },
+            { name: '三文鱼寿司', frequency: 10, emoji: '🍣' }
+        ];
+    }
+
+    // 保存到localStorage
+    function saveToLocal() {
+        const storeData = dishes.map(d => ({
+            name: d.name,
+            frequency: d.frequency,
+            emoji: d.emoji
+        }));
+        localStorage.setItem('shishenFoodData_v2', JSON.stringify(storeData));
+    }
+
+    function loadData() {
+        const stored = localStorage.getItem('shishenFoodData_v2');
+        if (stored) {
+            try {
+                let parsed = JSON.parse(stored);
+                if (Array.isArray(parsed) && parsed.length) {
+                    dishes = parsed.map(item => ({
+                        name: item.name,
+                        frequency: (typeof item.frequency === 'number') ? item.frequency : 10,
+                        emoji: item.emoji || getEmojiForName(item.name)
+                    }));
+                    // 保证每个菜品频率最低为1 (防止概率为0)
+                    for (let d of dishes) {
+                        if (d.frequency < 1) d.frequency = 1;
+                    }
+                    return;
+                }
+            } catch(e) {}
+        }
+        dishes = getDefaultDishes();
+    }
+
+    // 加权随机抽取 (根据frequency)
+    function getWeightedRandomDish() {
+        if (!dishes.length) return null;
+        let totalFreq = dishes.reduce((sum, d) => sum + d.frequency, 0);
+        if (totalFreq <= 0) return dishes[0];
+        let rand = Math.random() * totalFreq;
+        let accum = 0;
+        for (let d of dishes) {
+            accum += d.frequency;
+            if (rand <= accum) return d;
+        }
+        return dishes[dishes.length-1];
+    }
+
+    // 更新管理面板显示频率 (只读展示数字)
+    function renderManageList() {
+        if (!dishListContainer) return;
+        dishListContainer.innerHTML = '';
+        for (let i = 0; i < dishes.length; i++) {
+            const d = dishes[i];
+            const div = document.createElement('div');
+            div.className = 'dish-item';
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'dish-name';
+            nameSpan.innerText = `${d.emoji || '🍽️'} ${d.name}`;
+            const freqSpan = document.createElement('span');
+            freqSpan.className = 'dish-frequency';
+            freqSpan.innerText = `频率 · ${d.frequency}`;
+            const delBtn = document.createElement('button');
+            delBtn.innerText = '删除';
+            delBtn.className = 'del-dish';
+            delBtn.addEventListener('click', (function(idx) {
+                return () => {
+                    if (dishes.length <= 1) {
+                        showToast('至少保留一道菜，不然没法抽取啦～', true);
+                        return;
+                    }
+                    dishes.splice(idx, 1);
+                    saveToLocal();
+                    renderManageList();
+                    // 如果当前抽卡结果被删除，重置界面
+                    if (currentFinalDish && !dishes.some(dish => dish.name === currentFinalDish.name)) {
+                        resetToIdle();
+                    } else if (!isDrawing && !currentFinalDish) {
+                        resetToIdle();
+                    }
+                };
+            })(i));
+            div.appendChild(nameSpan);
+            div.appendChild(freqSpan);
+            div.appendChild(delBtn);
+            dishListContainer.appendChild(div);
+        }
+    }
+
+    // 重置抽卡界面到未开始状态
+    function resetToIdle() {
+        if (isDrawing) return;
+        slotPlaceholder.classList.remove('hide');
+        slotPlaceholder.style.display = 'flex';
+        rollingArea.innerHTML = '';
+        actionGroup.classList.add('hide');
+        currentFinalDish = null;
+        cardSlot.classList.remove('active-draw');
+    }
+
+    // 显示toast消息
+    function showToast(msg, isError = false) {
+        const existing = document.querySelector('.custom-toast');
+        if(existing) existing.remove();
+        const toast = document.createElement('div');
+        toast.className = 'custom-toast';
+        toast.innerText = msg;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '30px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.backgroundColor = isError ? '#cb6e46' : '#7c5a3a';
+        toast.style.color = 'white';
+        toast.style.padding = '10px 20px';
+        toast.style.borderRadius = '40px';
+        toast.style.fontSize = '14px';
+        toast.style.zIndex = '999';
+        toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        toast.style.backdropFilter = 'blur(4px)';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+
+    // 抽卡滚动动画：文字快速滚动8~10次，间隔逐渐变长，最后定格最终菜品
+    function startRollingAnimation() {
+        if (isDrawing) return;
+        if (!dishes.length) {
+            showToast('请先在管理选项添加菜品~', true);
+            return;
+        }
+        // 清空之前的滚动定时器
+        if (rollInterval) clearInterval(rollInterval);
+        if (rollTimeoutId) clearTimeout(rollTimeoutId);
+        
+        isDrawing = true;
+        // 隐藏占位符，显示滚动区域
+        slotPlaceholder.style.display = 'none';
+        rollingArea.innerHTML = `
+            <div class="rolling-card">
+                <div class="rolling-emoji" id="rollingEmoji">🍽️</div>
+                <div class="rolling-name" id="rollingName">??</div>
+                <div class="rolling-status" id="rollingStatusText">🎡 命运之轮滚动中 🎡</div>
+            </div>
+        `;
+        cardSlot.classList.add('active-draw');
+        actionGroup.classList.add('hide');
+        
+        const rollingEmojiSpan = document.getElementById('rollingEmoji');
+        const rollingNameSpan = document.getElementById('rollingName');
+        const statusSpan = document.getElementById('rollingStatusText');
+        
+        // 设置滚动次数：随机8~10次，为了视觉效果采用10次，间隔递增
+        const totalRolls = Math.floor(Math.random() * 3) + 8; // 8,9,10
+        // 递增间隔方案：首次80ms，后续每次增加20~30ms，最后一步到最终定格有单独延迟
+        let intervals = [];
+        let base = 80;
+        for (let i = 0; i < totalRolls; i++) {
+            let inc = Math.floor(Math.random() * 25) + 20; // 20~45增加
+            base += inc;
+            intervals.push(Math.min(base, 320)); // 最大间隔320ms
+        }
+        // 最终停顿时额外延迟200ms凸显定格
+        let rollIndex = 0;
+        
+        function nextRoll() {
+            if (rollIndex >= totalRolls) {
+                // 滚动完成，执行最终加权抽选并定格
+                if (rollInterval) clearInterval(rollInterval);
+                const finalDish = getWeightedRandomDish();
+                if (finalDish) {
+                    if (rollingEmojiSpan) rollingEmojiSpan.innerText = finalDish.emoji || getEmojiForName(finalDish.name);
+                    if (rollingNameSpan) rollingNameSpan.innerText = finalDish.name;
+                    if (statusSpan) statusSpan.innerText = '✨ 叮！结果出炉 ✨';
+                    currentFinalDish = finalDish;
+                } else {
+                    rollingNameSpan.innerText = '无菜品';
+                    currentFinalDish = null;
+                }
+                // 延迟消失滚动状态字样，显示按钮
+                setTimeout(() => {
+                    if (statusSpan) statusSpan.innerText = '✅ 选好啦！';
+                    actionGroup.classList.remove('hide');
+                    isDrawing = false;
+                    cardSlot.classList.remove('active-draw');
+                }, 200);
+                return;
+            }
+            // 随机抽选一个菜品临时显示滚动效果 (非最终权重，仅为视觉)
+            const randomTemp = dishes[Math.floor(Math.random() * dishes.length)];
+            if (rollingEmojiSpan) rollingEmojiSpan.innerText = randomTemp.emoji || getEmojiForName(randomTemp.name);
+            if (rollingNameSpan) rollingNameSpan.innerText = randomTemp.name;
+            if (statusSpan) statusSpan.innerText = '🎲 命运之轮滚动中 🎲';
+            
+            const delay = intervals[rollIndex];
+            rollIndex++;
+            rollTimeoutId = setTimeout(nextRoll, delay);
+        }
+        
+        // 清除之前的timeout保险
+        if (rollTimeoutId) clearTimeout(rollTimeoutId);
+        // 开始第一次滚动
+        rollTimeoutId = setTimeout(nextRoll, intervals[0] || 100);
+    }
+
+    // 换一个逻辑：降低当前菜品的频率，然后重新抽卡（带动画）
+    function handleReroll() {
+        if (isDrawing) {
+            showToast('抽选中，请稍后～', true);
+            return;
+        }
+        if (!currentFinalDish) {
+            showToast('还没有抽卡结果，请先点击“吃什么”', true);
+            return;
+        }
+        const target = dishes.find(d => d.name === currentFinalDish.name);
+        if (!target) {
+            showToast('该菜品已不存在，请重新抽卡', true);
+            resetToIdle();
+            return;
+        }
+        // 降低频率：减2，最低不低于1
+        let oldFreq = target.frequency;
+        let newFreq = Math.max(1, oldFreq - 2);
+        target.frequency = newFreq;
+        saveToLocal();
+        renderManageList();
+        showToast(`「${target.name}」出现概率降低 (${oldFreq} → ${newFreq})，重新抽取中...`, false);
+        // 重新抽卡
+        startRollingAnimation();
+    }
+
+    // 就吃这个逻辑：增加当前菜品的频率，然后展示已选择（不再抽卡）
+    function handleConfirmEat() {
+        if (isDrawing) {
+            showToast('抽卡中，请稍后再确认', true);
+            return;
+        }
+        if (!currentFinalDish) {
+            showToast('还没有抽卡结果，先抽一个吧', true);
+            return;
+        }
+        const target = dishes.find(d => d.name === currentFinalDish.name);
+        if (!target) {
+            showToast('菜品已不存在，请重新抽卡', true);
+            resetToIdle();
+            return;
+        }
+        let oldFreq = target.frequency;
+        let newFreq = oldFreq + 2;
+        target.frequency = newFreq;
+        saveToLocal();
+        renderManageList();
+        showToast(`🎉 就吃 ${target.name}！它的出现概率上升 (${oldFreq} → ${newFreq}) 🎉`, false);
+        // 不自动重新抽卡，保持最终结果，但可以再次点“吃什么”开始新的抽选
+        // 为了让用户明白，按钮依然保留，但可以继续
+    }
+
+    // 触发吃什么的抽卡
+    function onEatClick() {
+        if (isDrawing) {
+            showToast('正在滚动中，请稍后', true);
+            return;
+        }
+        startRollingAnimation();
+    }
+
+    // 添加新菜品
+    function addNewDish() {
+        let rawName = newDishInput.value.trim();
+        if (rawName === "") {
+            showToast('请输入菜品名称', true);
+            return;
+        }
+        if (dishes.some(d => d.name === rawName)) {
+            showToast('菜品已存在', true);
+            return;
+        }
+        const newEmoji = getEmojiForName(rawName);
+        dishes.push({
+            name: rawName,
+            frequency: 10,
+            emoji: newEmoji
+        });
+        saveToLocal();
+        renderManageList();
+        newDishInput.value = '';
+        showToast(`添加「${rawName}」成功，默认频率10`);
+        if (!isDrawing && !currentFinalDish) resetToIdle();
+    }
+
+    // 重置所有菜品频率为10
+    function resetAllFrequency() {
+        for (let d of dishes) {
+            d.frequency = 10;
+        }
+        saveToLocal();
+        renderManageList();
+        showToast('所有菜品频率已重置为10');
+        if (!isDrawing) resetToIdle();
+    }
+
+    // 事件绑定与初始化
+    function init() {
+        loadData();
+        renderManageList();
+        resetToIdle();
+        saveToLocal();
+        
+        eatBtn.addEventListener('click', onEatClick);
+        rerollBtn.addEventListener('click', handleReroll);
+        confirmEatBtn.addEventListener('click', handleConfirmEat);
+        manageTrigger.addEventListener('click', () => {
+            managePanel.classList.toggle('hide');
+        });
+        addNewDishBtn.addEventListener('click', addNewDish);
+        globalResetBtn.addEventListener('click', resetAllFrequency);
+        // 回车添加
+        newDishInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addNewDish();
+        });
+    }
+    
+    init();
+</script>
+</body>
+</html>
